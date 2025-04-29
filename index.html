@@ -85,10 +85,31 @@
       overflow-y: auto;
       border-top: 1px solid #b2dfdb;
     }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #80cbc4 #e0f2f1;
+    }
+    
+    /* Chrome, Edge, Safari */
+    *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    *::-webkit-scrollbar-track {
+      background: #e0f2f1;
+      border-radius: 10px;
+    }
+    
+    *::-webkit-scrollbar-thumb {
+      background-color: #80cbc4;
+      border-radius: 10px;
+      border: 2px solid #e0f2f1;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" style="overflow-y: scroll;">
     <h1>💎 Focus Crystals</h1>
     <div class="crystal-display" id="crystal">💠</div>
     <div class="timer" id="timer">30:00</div>
@@ -111,7 +132,8 @@
     Submit Score
   </button>
 </div>
-<div id="leaderboardList" style="text-align: left; padding: 0.5rem; border-radius: 10px; background: #f1f8e9;"></div>
+<div id="leaderboardList" style="text-align: left; padding: 0.5rem; border-radius: 10px; background: #f1f8e9; height: 200px; overflow-y: scroll;"></div>
+
 
   </div>
 
