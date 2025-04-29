@@ -276,6 +276,11 @@
         console.error(`Wake Lock error: ${err.name}, ${err.message}`);
       }
     }
+    if ('wakeLock' in navigator) {
+      alert("✅ Wake Lock is supported on this device.");
+    } else {
+      alert("❌ Wake Lock is NOT supported on this device.");
+    }
     
   </script>
   
