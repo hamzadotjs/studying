@@ -261,6 +261,22 @@
   
     updateDisplay();
     updateCrystals();
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('✅ Wake lock activated');
+          wakeLock.addEventListener('release', () => {
+            console.log('ℹ️ Wake lock released');
+          });
+        } else {
+          alert("⚠️ جهازك أو متصفحك لا يدعم Wake Lock لمنع غلق الشاشة.");
+        }
+      } catch (err) {
+        console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+      }
+    }
+    
   </script>
   
 </body>
