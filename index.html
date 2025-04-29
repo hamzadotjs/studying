@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Focus Crystals</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e0f7fa, #e1f5fe);
+      color: #37474f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #00796b;
+      margin-bottom: 0.5rem;
+    }
+
+    .crystal-display {
+      font-size: 3rem;
+      margin: 1.2rem 0;
+    }
+
+    .timer {
+      font-size: 2.5rem;
+      color: #004d40;
+      margin-bottom: 1rem;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(0, 77, 64, 0.3);
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+
+    button {
+      background: #4db6ac;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #00897b;
+    }
+
+    .crystal-count {
+      font-weight: bold;
+      color: #00695c;
+      margin-bottom: 0.5rem;
+    }
+
+    .crystal-collection {
+      font-size: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
+      padding-top: 0.5rem;
+      max-height: 120px;
+      overflow-y: auto;
+      border-top: 1px solid #b2dfdb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💎 Focus Crystals</h1>
+    <div class="crystal-display" id="crystal">💠</div>
+    <div class="timer" id="timer">30:00</div>
+
+    <div class="buttons">
+      <button id="startBtn">Start</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/100</div>
+    <div id="collection" class="crystal-collection"></div>
+  </div>
+
+  <!-- ✅ Sound effect -->
+  <audio id="alertSound" src="./sound-effect-twinklesparkle-115095.mp3" preload="auto"></audio>
+
+<script>
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const timerDisplay = document.getElementById('timer');
+    const crystalDisplay = document.getElementById('crystal');
+    const collectionDisplay = document.getElementById('collection');
+    const crystalCountDisplay = document.getElementById('crystalCount');
+    const alertSound = document.getElementById('alertSound');
+  
+  
+    let time = 1800;
+    let interval = null;
+  
+    let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
+    let crystals = JSON.parse(localStorage.getItem('crystals')) || [];
+  
+    const stages = ['💠', '🔷', '💎'];
+    const MAX_CRYSTALS = 50; 
+  
+    function formatTime(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+  
+    function updateDisplay() {
+      timerDisplay.textContent = formatTime(time);
+      if (time > 6) {
+        crystalDisplay.textContent = stages[0];
+      } else if (time > 3) {
+        crystalDisplay.textContent = stages[1];
+      } else {
+        crystalDisplay.textContent = stages[2];
+      }
+    }
+  
+    function updateCrystals() {
+      collectionDisplay.innerHTML = '';
+      crystalCountDisplay.textContent = crystals.length;
+      crystals.forEach(c => {
+        const el = document.createElement('span');
+        el.textContent = c;
+        collectionDisplay.appendChild(el);
+      });
+    }
+  
+    function startTimer() {
+      if (interval) return;
+  
+      interval = setInterval(() => {
+        if (time > 0) {
+          time--;
+          updateDisplay();
+        } else {
+          clearInterval(interval);
+          interval = null;
+  
+          totalSessions++;
+          localStorage.setItem('totalSessions', totalSessions);
+  
+          const newCrystals = totalSessions - crystals.length;
+          for (let i = 0; i < newCrystals && crystals.length < MAX_CRYSTALS; i++) {
+            crystals.push('💎');
+          }
+  
+          localStorage.setItem('crystals', JSON.stringify(crystals));
+          updateCrystals();
+  
+          alertSound.play();
+  
+          setTimeout(() => {
+            if (crystals.length >= MAX_CRYSTALS) {
+              alert("🏆 لقد جمعت 50 دايموند! لقد فزت!");
+            } else {
+              alert("💎 you have focuesd for 30 mins and you achived a diamond 💎");
+            }
+          }, 500);
+  
+          time = 1800;
+          updateDisplay();
+        }
+      }, 1000);
+    }
+  
+    function resetTimer() {
+      clearInterval(interval);
+      interval = null;
+      time = 1800;
+      updateDisplay();
+      crystalDisplay.textContent = stages[0];
+    }
+  
+    startBtn.addEventListener('click', startTimer);
+    resetBtn.addEventListener('click', resetTimer);
+  
+    updateDisplay();
+    updateCrystals();
+  </script>
+ 
+  </body>
+  </html>
+  
