@@ -101,11 +101,60 @@
 
     <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/50</div>
     <div id="collection" class="crystal-collection"></div>
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ccc;">
+<h2 style="color: #00796b;">🏆 Leaderboard</h2>
+<div style="margin-bottom: 1rem;">
+  <input id="username" type="text" placeholder="Enter your name"
+         style="padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc; width: 100%; max-width: 300px;">
+  <button onclick="saveToLeaderboard()"
+          style="margin-top: 0.5rem; background: #00796b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer;">
+    Submit Score
+  </button>
+</div>
+<div id="leaderboardList" style="text-align: left; padding: 0.5rem; border-radius: 10px; background: #f1f8e9;"></div>
+
   </div>
 
   <audio id="alertSound" src="./sound-effect-twinklesparkle-115095.mp3" preload="auto"></audio>
 
   <script>
+     // TODO: Replace with your Firebase project configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDd-YFGZBNOQbpLIDzpjDtba1k5F3yQtyE",
+    authDomain: "studying-daimonds.firebaseapp.com",
+    projectId: "studying-daimonds",
+    storageBucket: "studying-daimonds.firebasestorage.app",
+    messagingSenderId: "283666610275",
+    appId: "1:283666610275:web:1a88e7226ca5de78a22056"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  firebase.auth().signInAnonymously().catch(console.error);
+
+  const leaderboardRef = db.collection("leaderboard");
+
+  function submitScore(name, score) {
+    leaderboardRef.add({ name, score, timestamp: Date.now() });
+  }
+
+  async function renderLeaderboard() {
+    const snapshot = await leaderboardRef
+      .orderBy("score", "desc")
+      .limit(10)
+      .get();
+
+    const container = document.getElementById('leaderboardList');
+    container.innerHTML = '';
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const item = document.createElement('div');
+      item.textContent = `${data.name} - 💎 ${data.score}`;
+      container.appendChild(item);
+    });
+  }
     const startBtn = document.getElementById('startBtn');
     const pauseResumeBtn = document.getElementById('pauseResumeBtn');
     const resetBtn = document.getElementById('resetBtn');
@@ -282,6 +331,20 @@
       alert("❌ Wake Lock is NOT supported on this device.");
     }
     
+    function saveToLeaderboard() {
+      const name = document.getElementById('username').value.trim();
+      if (!name) return alert("Please enter your name!");
+    
+      const score = crystals.length;
+      submitScore(name, score);
+      alert("Score submitted!");
+      renderLeaderboard();
+    }
+
+    renderLeaderboard();
+    updateDisplay();
+    updateCrystals();
+
   </script>
   
 </body>
