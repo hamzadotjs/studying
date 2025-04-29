@@ -95,41 +95,41 @@
 
     <div class="buttons">
       <button id="startBtn">Start</button>
+      <button id="pauseResumeBtn">Pause</button>
       <button id="resetBtn">Reset</button>
     </div>
 
-    <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/100</div>
+    <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/50</div>
     <div id="collection" class="crystal-collection"></div>
   </div>
 
-  <!-- ✅ Sound effect -->
   <audio id="alertSound" src="./sound-effect-twinklesparkle-115095.mp3" preload="auto"></audio>
 
-<script>
+  <script>
     const startBtn = document.getElementById('startBtn');
+    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
     const resetBtn = document.getElementById('resetBtn');
     const timerDisplay = document.getElementById('timer');
     const crystalDisplay = document.getElementById('crystal');
     const collectionDisplay = document.getElementById('collection');
     const crystalCountDisplay = document.getElementById('crystalCount');
     const alertSound = document.getElementById('alertSound');
-  
-  
+
     let time = 1800;
     let interval = null;
-  
+
     let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
     let crystals = JSON.parse(localStorage.getItem('crystals')) || [];
-  
+
     const stages = ['💠', '🔷', '💎'];
-    const MAX_CRYSTALS = 50; 
-  
+    const MAX_CRYSTALS = 50;
+
     function formatTime(seconds) {
       const m = String(Math.floor(seconds / 60)).padStart(2, '0');
       const s = String(seconds % 60).padStart(2, '0');
       return `${m}:${s}`;
     }
-  
+
     function updateDisplay() {
       timerDisplay.textContent = formatTime(time);
       if (time > 6) {
@@ -140,7 +140,7 @@
         crystalDisplay.textContent = stages[2];
       }
     }
-  
+
     function updateCrystals() {
       collectionDisplay.innerHTML = '';
       crystalCountDisplay.textContent = crystals.length;
@@ -150,10 +150,14 @@
         collectionDisplay.appendChild(el);
       });
     }
-  
-    function startTimer() {
+
+    function startTimer(fromResume = false) {
       if (interval) return;
-  
+
+      if (!fromResume) {
+        pauseResumeBtn.textContent = 'Pause';
+      }
+
       interval = setInterval(() => {
         if (time > 0) {
           time--;
@@ -161,49 +165,64 @@
         } else {
           clearInterval(interval);
           interval = null;
-  
+
           totalSessions++;
           localStorage.setItem('totalSessions', totalSessions);
-  
+
           const newCrystals = totalSessions - crystals.length;
           for (let i = 0; i < newCrystals && crystals.length < MAX_CRYSTALS; i++) {
             crystals.push('💎');
           }
-  
+
           localStorage.setItem('crystals', JSON.stringify(crystals));
           updateCrystals();
-  
+
           alertSound.play();
-  
+
           setTimeout(() => {
             if (crystals.length >= MAX_CRYSTALS) {
-              alert("🏆 لقد جمعت 50 دايموند! لقد فزت!");
+              alert("🏆 congratulations you win and collcted 50 daimonds");
             } else {
-              alert("💎 you have focuesd for 30 mins and you achived a diamond 💎");
+              alert("💎 you have focused for 30 mins and you achieved a diamond 💎");
             }
           }, 500);
-  
+
           time = 1800;
           updateDisplay();
+          pauseResumeBtn.textContent = 'Pause';
         }
       }, 1000);
     }
-  
+
+    function pauseResumeTimer() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+        pauseResumeBtn.textContent = 'Resume';
+      } else {
+        startTimer(true);
+        pauseResumeBtn.textContent = 'Pause';
+      }
+    }
+
     function resetTimer() {
       clearInterval(interval);
       interval = null;
       time = 1800;
       updateDisplay();
       crystalDisplay.textContent = stages[0];
+      pauseResumeBtn.textContent = 'Pause';
     }
-  
-    startBtn.addEventListener('click', startTimer);
+
+    startBtn.addEventListener('click', () => {
+      startTimer();
+    });
+
+    pauseResumeBtn.addEventListener('click', pauseResumeTimer);
     resetBtn.addEventListener('click', resetTimer);
-  
+
     updateDisplay();
     updateCrystals();
   </script>
- 
-  </body>
-  </html>
-  
+</body>
+</html>
