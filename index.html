@@ -308,10 +308,23 @@
         pauseResumeBtn.textContent = 'Pause';
         releaseWakeLock();
       }
-    
       async function submitScore(name, score) {
-        await leaderboardRef.add({ name, score, timestamp: Date.now() });
+        const snapshot = await leaderboardRef.where("name", "==", name).get();
+      
+        if (!snapshot.empty) {
+          // Update existing entry
+          snapshot.forEach(async doc => {
+            await leaderboardRef.doc(doc.id).update({
+              score: score,
+              timestamp: Date.now()
+            });
+          });
+        } else {
+          // Add new entry if not found
+          await leaderboardRef.add({ name, score, timestamp: Date.now() });
+        }
       }
+      
     
       async function renderLeaderboard() {
         const now = Date.now();
@@ -336,7 +349,7 @@
       }
     
       window.saveToLeaderboard = async function () {
-        if (scoreSubmitted) return alert("You've already submitted your score!");
+        
         const name = document.getElementById('username').value.trim();
         if (!name) return alert("Please enter your name!");
         const score = crystals.length;
@@ -381,7 +394,11 @@ window.saveToLeaderboard = async function () {
   renderLeaderboard();
 };
 
-    
+if (crystals.length > totalSessions) {
+  alert("تعديل غير قانوني في البيانات! سيتم تجاهل التحديث.");
+  return;
+}
+
   </script>
 </body>
 </html>
