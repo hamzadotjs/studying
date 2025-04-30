@@ -144,6 +144,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <script>
+    
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('keydown', function (e) {
       if (
@@ -353,8 +354,33 @@
       updateCrystals();
       renderLeaderboard();
     });
+const LOCAL_RESET_VERSION = 2; // Same version you put in Firestore
+let scoreSubmitted = false;
+
+firebase.firestore().collection('config').doc('reset').get().then(doc => {
+  const data = doc.data();
+  if (data && data.resetVersion > LOCAL_RESET_VERSION) {
+    localStorage.removeItem('crystals');
+    localStorage.removeItem('totalSessions');
+    scoreSubmitted = false; // Allow resubmission
+    crystals = [];
+    totalSessions = 0;
+    localStorage.setItem('resetVersion', data.resetVersion);
+    updateCrystals();
+  }
+});
+
     
-    let scoreSubmitted = false;
+window.saveToLeaderboard = async function () {
+  const name = document.getElementById('username').value.trim();
+  if (!name) return alert("Please enter your name!");
+  const score = crystals.length;
+  await leaderboardRef.add({ name, score, timestamp: Date.now() });
+  scoreSubmitted = true;
+  alert("Score submitted!");
+  renderLeaderboard();
+};
+
     
   </script>
 </body>
