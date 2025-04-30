@@ -138,12 +138,11 @@
 
   <audio id="alertSound" src="./sound-effect-twinklesparkle-115095.mp3" preload="auto"></audio>
 
-  <!-- ✅ Add Firebase SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ Main Script -->
   <script>
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('keydown', function (e) {
@@ -165,19 +164,19 @@
         messagingSenderId: "283666610275",
         appId: "1:283666610275:web:1a88e7226ca5de78a22056"
       };
-
+    
       if ('wakeLock' in navigator) {
         alert("✅ Wake Lock is supported");
       } else {
         alert("⚠️ Wake Lock is NOT supported in your browser");
       }
-      
+    
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
       const leaderboardRef = db.collection("leaderboard");
-
+    
       firebase.auth().signInAnonymously().catch(console.error);
-
+    
       const startBtn = document.getElementById('startBtn');
       const pauseResumeBtn = document.getElementById('pauseResumeBtn');
       const resetBtn = document.getElementById('resetBtn');
@@ -186,7 +185,7 @@
       const collectionDisplay = document.getElementById('collection');
       const crystalCountDisplay = document.getElementById('crystalCount');
       const alertSound = document.getElementById('alertSound');
-
+    
       let time = 1800;
       let interval = null;
       let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
@@ -194,7 +193,7 @@
       const stages = ['💠', '🔷', '💎'];
       const MAX_CRYSTALS = 30;
       let wakeLock = null;
-
+    
       async function requestWakeLock() {
         try {
           if ('wakeLock' in navigator) {
@@ -205,14 +204,14 @@
           console.error(`Wake Lock error: ${err.name}, ${err.message}`);
         }
       }
-
+    
       function releaseWakeLock() {
         if (wakeLock) {
           wakeLock.release();
           wakeLock = null;
         }
       }
-
+    
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && interval) {
           requestWakeLock();
@@ -220,18 +219,18 @@
           releaseWakeLock();
         }
       });
-
+    
       function formatTime(seconds) {
         const m = String(Math.floor(seconds / 60)).padStart(2, '0');
         const s = String(seconds % 60).padStart(2, '0');
         return `${m}:${s}`;
       }
-
+    
       function updateDisplay() {
         timerDisplay.textContent = formatTime(time);
         crystalDisplay.textContent = time > 6 ? stages[0] : time > 3 ? stages[1] : stages[2];
       }
-
+    
       function updateCrystals() {
         collectionDisplay.innerHTML = '';
         crystalCountDisplay.textContent = crystals.length;
@@ -241,7 +240,7 @@
           collectionDisplay.appendChild(el);
         });
       }
-
+    
       function startTimer(fromResume = false) {
         if (interval) return;
         if (!fromResume) pauseResumeBtn.textContent = 'Pause';
@@ -262,21 +261,30 @@
             }
             localStorage.setItem('crystals', JSON.stringify(crystals));
             updateCrystals();
-            alertSound.play().catch(() => console.log("Sound playback blocked."));
+            
+            // Ensure the sound is triggered after a user action (like clicking "Start")
+            alertSound.play().then(() => {
+              console.log("Sound played successfully.");
+            }).catch((error) => {
+              console.log("Error playing sound:", error);
+              alert("Sound could not be played due to browser restrictions.");
+            });
+            
             setTimeout(() => {
               if (crystals.length >= MAX_CRYSTALS) {
-                alert("🏆 Congratulations! You won and collected 3 0 diamonds.");
+                alert("🏆 Congratulations! You won and collected 30 diamonds.");
               } else {
                 alert("💎 You focused for 30 minutes and earned a diamond!");
               }
             }, 500);
+            
             time = 1800;
             updateDisplay();
             pauseResumeBtn.textContent = 'Pause';
           }
         }, 1000);
       }
-
+    
       function pauseResumeTimer() {
         if (interval) {
           clearInterval(interval);
@@ -287,7 +295,7 @@
           startTimer(true);
         }
       }
-
+    
       function resetTimer() {
         clearInterval(interval);
         interval = null;
@@ -297,25 +305,25 @@
         pauseResumeBtn.textContent = 'Pause';
         releaseWakeLock();
       }
-
+    
       async function submitScore(name, score) {
         await leaderboardRef.add({ name, score, timestamp: Date.now() });
       }
-      
+    
       async function renderLeaderboard() {
         const now = Date.now();
         const fifteenHoursAgo = now - (15 * 60 * 60 * 1000); 
-      
+    
         const snapshot = await leaderboardRef
-          .where("timestamp", ">=", fifteenHoursAgo)
-          .orderBy("timestamp", "desc")
           .orderBy("score", "desc")
           .limit(10)
           .get();
-      
+    
+        console.log("Leaderboard snapshot size:", snapshot.size);
+    
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
-      
+    
         snapshot.forEach(doc => {
           const data = doc.data();
           const item = document.createElement('div');
@@ -323,8 +331,7 @@
           container.appendChild(item);
         });
       }
-      
-
+    
       window.saveToLeaderboard = async function () {
         if (scoreSubmitted) return alert("You've already submitted your score!");
         const name = document.getElementById('username').value.trim();
@@ -335,7 +342,7 @@
         alert("Score submitted!");
         renderLeaderboard();
       };
-      
+    
       // Init
       startBtn.addEventListener('click', () => startTimer());
       pauseResumeBtn.addEventListener('click', pauseResumeTimer);
@@ -344,61 +351,9 @@
       updateCrystals();
       renderLeaderboard();
     });
+    
     let scoreSubmitted = false;
-
-window.saveToLeaderboard = function () {
-  if (scoreSubmitted) return alert("You've already submitted your score!");
-  const name = document.getElementById('username').value.trim();
-  if (!name) return alert("Please enter your name!");
-  const score = crystals.length;
-  submitScore(name, score);
-  scoreSubmitted = true;
-  alert("Score submitted!");
-  renderLeaderboard();
-};
-function startTimer(fromResume = false) {
-  if (interval) return;
-  if (!fromResume) pauseResumeBtn.textContent = 'Pause';
-  requestWakeLock();
-  interval = setInterval(() => {
-    if (time > 0) {
-      time--;
-      updateDisplay();
-    } else {
-      clearInterval(interval);
-      interval = null;
-      releaseWakeLock();
-      totalSessions++;
-      localStorage.setItem('totalSessions', totalSessions);
-      const newCrystals = totalSessions - crystals.length;
-      for (let i = 0; i < newCrystals && crystals.length < MAX_CRYSTALS; i++) {
-        crystals.push('💎');
-      }
-      localStorage.setItem('crystals', JSON.stringify(crystals));
-      updateCrystals();
-      
-      alertSound.play().then(() => {
-        console.log("Sound played successfully.");
-      }).catch((error) => {
-        console.log("Error playing sound:", error);
-        alert("Sound could not be played due to browser restrictions.");
-      });
-      setTimeout(() => {
-        if (crystals.length >= MAX_CRYSTALS) {
-          alert("🏆 Congratulations! You won and collected 30 diamonds.");
-        } else {
-          alert("💎 You focused for 30 minutes and earned a diamond!");
-        }
-      }, 500);
-      time = 1800;
-      updateDisplay();
-      pauseResumeBtn.textContent = 'Pause';
-    }
-  }, 1000);
-}
-
-alertSound.play().catch(() => console.log("Sound playback blocked."));
-
+    
   </script>
 </body>
 </html>
