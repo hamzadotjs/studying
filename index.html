@@ -315,6 +315,19 @@
       updateCrystals();
       renderLeaderboard();
     });
+    let scoreSubmitted = false;
+
+window.saveToLeaderboard = function () {
+  if (scoreSubmitted) return alert("You've already submitted your score!");
+  const name = document.getElementById('username').value.trim();
+  if (!name) return alert("Please enter your name!");
+  const score = crystals.length;
+  submitScore(name, score);
+  scoreSubmitted = true;
+  alert("Score submitted!");
+  renderLeaderboard();
+};
+
   </script>
 </body>
 </html>
