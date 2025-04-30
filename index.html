@@ -298,10 +298,10 @@
         releaseWakeLock();
       }
 
-      function submitScore(name, score) {
-        leaderboardRef.add({ name, score, timestamp: Date.now() });
+      async function submitScore(name, score) {
+        await leaderboardRef.add({ name, score, timestamp: Date.now() });
       }
-
+      
       async function renderLeaderboard() {
         const now = Date.now();
         const fifteenHoursAgo = now - (15 * 60 * 60 * 1000); 
@@ -325,15 +325,17 @@
       }
       
 
-      window.saveToLeaderboard = function () {
+      window.saveToLeaderboard = async function () {
+        if (scoreSubmitted) return alert("You've already submitted your score!");
         const name = document.getElementById('username').value.trim();
         if (!name) return alert("Please enter your name!");
         const score = crystals.length;
-        submitScore(name, score);
+        await submitScore(name, score);
+        scoreSubmitted = true;
         alert("Score submitted!");
         renderLeaderboard();
       };
-
+      
       // Init
       startBtn.addEventListener('click', () => startTimer());
       pauseResumeBtn.addEventListener('click', pauseResumeTimer);
