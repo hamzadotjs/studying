@@ -164,7 +164,23 @@
         messagingSenderId: "283666610275",
         appId: "1:283666610275:web:1a88e7226ca5de78a22056"
       };
-    
+      const versionRef = db.collection("config").doc("reset");
+
+      versionRef.get().then(doc => {
+        const resetVersion = doc.data().resetVersion;
+        const localVersion = parseInt(localStorage.getItem('resetVersion')) || 0;
+      
+        if (resetVersion > localVersion) {
+          // Clear local data
+          localStorage.removeItem('crystals');
+          localStorage.removeItem('totalSessions');
+          localStorage.setItem('resetVersion', resetVersion);
+          alert("🔄 Diamonds have been reset by admin.");
+          location.reload();
+        }
+      });
+      
+
       if ('wakeLock' in navigator) {
         alert("✅ Wake Lock is supported");
       } else {
