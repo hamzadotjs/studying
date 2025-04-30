@@ -110,7 +110,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>💎 Studying Crystals</h1>
+    <h1>💎 Focus Crystals</h1>
     <div class="crystal-display" id="crystal">💠</div>
     <div class="timer" id="timer">30:00</div>
 
@@ -120,7 +120,7 @@
       <button id="resetBtn">Reset</button>
     </div>
 
-    <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/50</div>
+    <div class="crystal-count">Crystals Collected: <span id="crystalCount">0</span>/30</div>
     <div id="collection" class="crystal-collection"></div>
 
     <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ccc;">
@@ -166,6 +166,12 @@
         appId: "1:283666610275:web:1a88e7226ca5de78a22056"
       };
 
+      if ('wakeLock' in navigator) {
+        alert("✅ Wake Lock is supported");
+      } else {
+        alert("⚠️ Wake Lock is NOT supported in your browser");
+      }
+      
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
       const leaderboardRef = db.collection("leaderboard");
@@ -186,7 +192,7 @@
       let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
       let crystals = JSON.parse(localStorage.getItem('crystals')) || [];
       const stages = ['💠', '🔷', '💎'];
-      const MAX_CRYSTALS = 50;
+      const MAX_CRYSTALS = 30;
       let wakeLock = null;
 
       async function requestWakeLock() {
@@ -259,7 +265,7 @@
             alertSound.play().catch(() => console.log("Sound playback blocked."));
             setTimeout(() => {
               if (crystals.length >= MAX_CRYSTALS) {
-                alert("🏆 Congratulations! You won and collected 50 diamonds.");
+                alert("🏆 Congratulations! You won and collected 3 0 diamonds.");
               } else {
                 alert("💎 You focused for 30 minutes and earned a diamond!");
               }
@@ -377,7 +383,7 @@ function startTimer(fromResume = false) {
       });
       setTimeout(() => {
         if (crystals.length >= MAX_CRYSTALS) {
-          alert("🏆 Congratulations! You won and collected 50 diamonds.");
+          alert("🏆 Congratulations! You won and collected 30 diamonds.");
         } else {
           alert("💎 You focused for 30 minutes and earned a diamond!");
         }
