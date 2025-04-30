@@ -145,6 +145,16 @@
 
   <!-- ✅ Main Script -->
   <script>
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', function (e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')
+      ) {
+        e.preventDefault();
+      }
+    });
     document.addEventListener('DOMContentLoaded', () => {
       // Firebase config
       const firebaseConfig = {
@@ -287,9 +297,19 @@
       }
 
       async function renderLeaderboard() {
-        const snapshot = await leaderboardRef.orderBy("score", "desc").limit(10).get();
+        const now = Date.now();
+        const fifteenHoursAgo = now - (15 * 60 * 60 * 1000); 
+      
+        const snapshot = await leaderboardRef
+          .where("timestamp", ">=", fifteenHoursAgo)
+          .orderBy("timestamp", "desc")
+          .orderBy("score", "desc")
+          .limit(10)
+          .get();
+      
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
+      
         snapshot.forEach(doc => {
           const data = doc.data();
           const item = document.createElement('div');
@@ -297,6 +317,7 @@
           container.appendChild(item);
         });
       }
+      
 
       window.saveToLeaderboard = function () {
         const name = document.getElementById('username').value.trim();
@@ -327,6 +348,48 @@ window.saveToLeaderboard = function () {
   alert("Score submitted!");
   renderLeaderboard();
 };
+function startTimer(fromResume = false) {
+  if (interval) return;
+  if (!fromResume) pauseResumeBtn.textContent = 'Pause';
+  requestWakeLock();
+  interval = setInterval(() => {
+    if (time > 0) {
+      time--;
+      updateDisplay();
+    } else {
+      clearInterval(interval);
+      interval = null;
+      releaseWakeLock();
+      totalSessions++;
+      localStorage.setItem('totalSessions', totalSessions);
+      const newCrystals = totalSessions - crystals.length;
+      for (let i = 0; i < newCrystals && crystals.length < MAX_CRYSTALS; i++) {
+        crystals.push('💎');
+      }
+      localStorage.setItem('crystals', JSON.stringify(crystals));
+      updateCrystals();
+      
+      alertSound.play().then(() => {
+        console.log("Sound played successfully.");
+      }).catch((error) => {
+        console.log("Error playing sound:", error);
+        alert("Sound could not be played due to browser restrictions.");
+      });
+      setTimeout(() => {
+        if (crystals.length >= MAX_CRYSTALS) {
+          alert("🏆 Congratulations! You won and collected 50 diamonds.");
+        } else {
+          alert("💎 You focused for 30 minutes and earned a diamond!");
+        }
+      }, 500);
+      time = 1800;
+      updateDisplay();
+      pauseResumeBtn.textContent = 'Pause';
+    }
+  }, 1000);
+}
+
+alertSound.play().catch(() => console.log("Sound playback blocked."));
 
   </script>
 </body>
