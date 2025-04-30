@@ -144,7 +144,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
   <script>
-    
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('keydown', function (e) {
       if (
@@ -155,8 +154,8 @@
         e.preventDefault();
       }
     });
+  
     document.addEventListener('DOMContentLoaded', () => {
-      // Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyDd-YFGZBNOQbpLIDzpjDtba1k5F3yQtyE",
         authDomain: "studying-daimonds.firebaseapp.com",
@@ -165,21 +164,13 @@
         messagingSenderId: "283666610275",
         appId: "1:283666610275:web:1a88e7226ca5de78a22056"
       };
-     
-      
-
-      if ('wakeLock' in navigator) {
-        alert("✅ Wake Lock is supported");
-      } else {
-        alert("⚠️ Wake Lock is NOT supported in your browser");
-      }
-    
+  
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
       const leaderboardRef = db.collection("leaderboard");
-    
+  
       firebase.auth().signInAnonymously().catch(console.error);
-    
+  
       const startBtn = document.getElementById('startBtn');
       const pauseResumeBtn = document.getElementById('pauseResumeBtn');
       const resetBtn = document.getElementById('resetBtn');
@@ -188,15 +179,16 @@
       const collectionDisplay = document.getElementById('collection');
       const crystalCountDisplay = document.getElementById('crystalCount');
       const alertSound = document.getElementById('alertSound');
-    
+  
       let time = 1800;
       let interval = null;
-      let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
       let crystals = JSON.parse(localStorage.getItem('crystals')) || [];
+      let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
+      let scoreSubmitted = false;
       const stages = ['💠', '🔷', '💎'];
       const MAX_CRYSTALS = 30;
       let wakeLock = null;
-    
+  
       async function requestWakeLock() {
         try {
           if ('wakeLock' in navigator) {
@@ -207,14 +199,14 @@
           console.error(`Wake Lock error: ${err.name}, ${err.message}`);
         }
       }
-    
+  
       function releaseWakeLock() {
         if (wakeLock) {
           wakeLock.release();
           wakeLock = null;
         }
       }
-    
+  
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && interval) {
           requestWakeLock();
@@ -222,18 +214,18 @@
           releaseWakeLock();
         }
       });
-    
+  
       function formatTime(seconds) {
         const m = String(Math.floor(seconds / 60)).padStart(2, '0');
         const s = String(seconds % 60).padStart(2, '0');
         return `${m}:${s}`;
       }
-    
+  
       function updateDisplay() {
         timerDisplay.textContent = formatTime(time);
         crystalDisplay.textContent = time > 6 ? stages[0] : time > 3 ? stages[1] : stages[2];
       }
-    
+  
       function updateCrystals() {
         collectionDisplay.innerHTML = '';
         crystalCountDisplay.textContent = crystals.length;
@@ -243,7 +235,7 @@
           collectionDisplay.appendChild(el);
         });
       }
-    
+  
       function startTimer(fromResume = false) {
         if (interval) return;
         if (!fromResume) pauseResumeBtn.textContent = 'Pause';
@@ -264,30 +256,19 @@
             }
             localStorage.setItem('crystals', JSON.stringify(crystals));
             updateCrystals();
-            
-            // Ensure the sound is triggered after a user action (like clicking "Start")
-            alertSound.play().then(() => {
-              console.log("Sound played successfully.");
-            }).catch((error) => {
-              console.log("Error playing sound:", error);
-              alert("Sound could not be played due to browser restrictions.");
-            });
-            
+            alertSound.play().catch(err => console.log("Sound error:", err));
             setTimeout(() => {
-              if (crystals.length >= MAX_CRYSTALS) {
-                alert("🏆 Congratulations! You won and collected 30 diamonds.");
-              } else {
-                alert("💎 You focused for 30 minutes and earned a diamond!");
-              }
+              alert(crystals.length >= MAX_CRYSTALS
+                ? "🏆 Congratulations! You collected 30 diamonds!"
+                : "💎 You earned a diamond!");
             }, 500);
-            
             time = 1800;
             updateDisplay();
             pauseResumeBtn.textContent = 'Pause';
           }
         }, 1000);
       }
-    
+  
       function pauseResumeTimer() {
         if (interval) {
           clearInterval(interval);
@@ -298,7 +279,7 @@
           startTimer(true);
         }
       }
-    
+  
       function resetTimer() {
         clearInterval(interval);
         interval = null;
@@ -308,38 +289,11 @@
         pauseResumeBtn.textContent = 'Pause';
         releaseWakeLock();
       }
-      async function submitScore(name, score) {
-        const snapshot = await leaderboardRef.where("name", "==", name).get();
-      
-        if (!snapshot.empty) {
-          // Update existing entry
-          snapshot.forEach(async doc => {
-            await leaderboardRef.doc(doc.id).update({
-              score: score,
-              timestamp: Date.now()
-            });
-          });
-        } else {
-          // Add new entry if not found
-          await leaderboardRef.add({ name, score, timestamp: Date.now() });
-        }
-      }
-      
-    
+  
       async function renderLeaderboard() {
-        const now = Date.now();
-        const fifteenHoursAgo = now - (15 * 60 * 60 * 1000); 
-    
-        const snapshot = await leaderboardRef
-          .orderBy("score", "desc")
-          .limit(10)
-          .get();
-    
-        console.log("Leaderboard snapshot size:", snapshot.size);
-    
+        const snapshot = await leaderboardRef.orderBy("score", "desc").limit(10).get();
         const container = document.getElementById('leaderboardList');
         container.innerHTML = '';
-    
         snapshot.forEach(doc => {
           const data = doc.data();
           const item = document.createElement('div');
@@ -347,58 +301,60 @@
           container.appendChild(item);
         });
       }
-    
+  
+      // Save score (with update if user exists)
       window.saveToLeaderboard = async function () {
-        
         const name = document.getElementById('username').value.trim();
         if (!name) return alert("Please enter your name!");
+  
         const score = crystals.length;
-        await submitScore(name, score);
+        if (score > totalSessions) {
+          alert("تعديل غير قانوني في البيانات! سيتم تجاهل التحديث.");
+          return;
+        }
+  
+        const snapshot = await leaderboardRef.where("name", "==", name).get();
+  
+        if (!snapshot.empty) {
+          snapshot.forEach(async doc => {
+            await leaderboardRef.doc(doc.id).update({
+              score: score,
+              timestamp: Date.now()
+            });
+          });
+          alert("Score updated!");
+        } else {
+          await leaderboardRef.add({ name, score, timestamp: Date.now() });
+          alert("Score submitted!");
+        }
+  
         scoreSubmitted = true;
-        alert("Score submitted!");
         renderLeaderboard();
       };
-    
+  
+      // Reset detection
+      firebase.firestore().collection('config').doc('reset').get().then(doc => {
+        const data = doc.data();
+        const localReset = parseInt(localStorage.getItem('resetVersion') || 0);
+        if (data && data.resetVersion > localReset) {
+          localStorage.removeItem('crystals');
+          localStorage.removeItem('totalSessions');
+          crystals = [];
+          totalSessions = 0;
+          localStorage.setItem('resetVersion', data.resetVersion);
+          updateCrystals();
+        }
+      });
+  
       // Init
-      startBtn.addEventListener('click', () => startTimer());
-      pauseResumeBtn.addEventListener('click', pauseResumeTimer);
-      resetBtn.addEventListener('click', resetTimer);
       updateDisplay();
       updateCrystals();
       renderLeaderboard();
+      startBtn.addEventListener('click', () => startTimer());
+      pauseResumeBtn.addEventListener('click', pauseResumeTimer);
+      resetBtn.addEventListener('click', resetTimer);
     });
-const LOCAL_RESET_VERSION = 2; // Same version you put in Firestore
-let scoreSubmitted = false;
-
-firebase.firestore().collection('config').doc('reset').get().then(doc => {
-  const data = doc.data();
-  if (data && data.resetVersion > LOCAL_RESET_VERSION) {
-    localStorage.removeItem('crystals');
-    localStorage.removeItem('totalSessions');
-    scoreSubmitted = false; // Allow resubmission
-    crystals = [];
-    totalSessions = 0;
-    localStorage.setItem('resetVersion', data.resetVersion);
-    updateCrystals();
-  }
-});
-
-    
-window.saveToLeaderboard = async function () {
-  const name = document.getElementById('username').value.trim();
-  if (!name) return alert("Please enter your name!");
-  const score = crystals.length;
-  await leaderboardRef.add({ name, score, timestamp: Date.now() });
-  scoreSubmitted = true;
-  alert("Score submitted!");
-  renderLeaderboard();
-};
-
-if (crystals.length > totalSessions) {
-  alert("تعديل غير قانوني في البيانات! سيتم تجاهل التحديث.");
-  return;
-}
-
   </script>
+  
 </body>
 </html>
