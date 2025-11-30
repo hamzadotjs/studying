@@ -189,7 +189,7 @@
       let totalSessions = parseInt(localStorage.getItem('totalSessions')) || 0;
       let scoreSubmitted = false;
       const stages = ['💠', '🔷', '💎'];
-      const MAX_CRYSTALS = 30;
+      const MAX_CRYSTALS = 25;
       let wakeLock = null;
   
       async function requestWakeLock() {
@@ -262,7 +262,7 @@
             alertSound.play().catch(err => console.log("Sound error:", err));
             setTimeout(() => {
               alert(crystals.length >= MAX_CRYSTALS
-                ? "🏆 Congratulations! You collected 30 diamonds!"
+                ? "🏆 Congratulations! You collected 25 diamonds!"
                 : "💎 You earned a diamond!");
             }, 500);
             time = 1800;
